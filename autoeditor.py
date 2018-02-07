@@ -24,8 +24,8 @@ def process_wave(filepath):
     ## GENERATE STEREO FILE ##
     wv = wave.open('temp-edited.wav', 'w')
     wv.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
-    maxVol=2**14-1.0 #maximum amplitude
-    wvData=""
+    maxVol=2**14-1.0 # maximum amplitude
+    wvData="" # c string
     i = 0
     subSamples = []
 
@@ -47,19 +47,16 @@ def process_wave(filepath):
             
         else:
             data = 0
-        if (i %chunk == 0 and i != 0) or (i == f.getnframes()-1):    
+        if (i % chunk == 0 and i != 0) or (i == f.getnframes()-1):    
             if data: 
-                #everything squared & rooted
+                # get amplitude of chunk
                 amp = rms(subSamples[0:chunk-1]) # amp
                 ezToRead.append(amp) #array of amps
-                # -- write source wav file in left channel
-                # cut if amp is 0
+                # -- write wave info
+                # -- cut if amp is below threshold
                 if amp > threshold:
                     for d in range(0,len(subSamples)-1):
                         wvData += pack('h', subSamples[d][0])
-                #else:
-                    # for d in range(0,len(subSamples)-1):
-                    #     wvData += pack('h',0)
                 subSamples = []
 
             else:
