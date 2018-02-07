@@ -1,7 +1,7 @@
 import pyaudio
 import wave
 from struct import pack, unpack
-from math import sin, pi, sqrt
+from math import sqrt
 import os
 
 def process_wave(filepath):
