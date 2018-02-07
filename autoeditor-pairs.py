@@ -1,6 +1,11 @@
 """
     assumes wavefile will have two parts the user wants to cut i.e. -----\/\/\/\/---\/\/\/\/\/---
     it then creates two new wave files: part 1, part 2
+
+    INPUT WAVEFILE REQUIREMENTS:
+        - 16bit pcm
+        - 44100 Hz
+        - mono
 """
 import pyaudio
 import wave
@@ -16,9 +21,9 @@ def process_wave(filepath):
     """
     RATE=44100
     chunk = 512
-    threshold = 1000
+    threshold = 500
 
-    minimumTimeBetweenCuts = 0.5 # in seconds
+    minimumTimeBetweenCuts = 1 # in seconds
 
     cutTimeChunks = int(RATE*minimumTimeBetweenCuts) / 512 # the minimum time to wait to make an edit, in chunks.
 
@@ -41,10 +46,18 @@ def process_wave(filepath):
     wv1Data="" 
     #                 -- /
 
+
+    # control flow for wave partitioning
     part1 = False
+    part2 = False
     interlude = False
 
-    maxVol=2**14-1.0 # maximum amplitude
+    maxVol=2**15-1.0 # maximum amplitude
+    # this is just handy to have onhand
+    # explaination:
+    # for 16 bit audio, amp ranges from +32768 : -32768
+    # this is because 2^16 = 65536, and 65536/2 = 32768
+
     i = 0
     subSamples = []
 
@@ -71,20 +84,25 @@ def process_wave(filepath):
                 if data: 
                     # get amplitude of chunk
                     amp = rms(subSamples[0:chunk-1]) # amp
-                    ezToRead.append(amp) #array of amps
+                    ezToRead.append(amp) # array of amps
                     # -- write wave info
                     # -- cut if amp is below threshold
+
                     if amp > threshold:
                         part1 = True
                         for d in range(0,len(subSamples)-1):
                             wv0Data += pack('h', subSamples[d][0])
                     else:
                         if part1:
-                            interlude = True # we are at least in part 1, and we have now reached silence.
+                            for d in range(0,len(subSamples)-1):
+                                wv0Data += pack('h', subSamples[d][0])
+                            # we are at least in part 1, and we have now reached silence.
                             chunksOfSilence += 1
+                        if chunksOfSilence > cutTimeChunks:
+                            interlude = True # we are prob in the interlude as we have exceeded our time threshold
 
                     subSamples = []
-            if interlude:
+            else:
                 if data: 
                     # get amplitude of chunk
                     amp = rms(subSamples[0:chunk-1]) # amp
@@ -92,13 +110,14 @@ def process_wave(filepath):
                     # -- write wave info
                     # -- cut if amp is below threshold
                     if amp > threshold:
+                        part2 = True
                         for d in range(0,len(subSamples)-1):
                             wv1Data += pack('h', subSamples[d][0])
-
+                    elif part2:
+                        for d in range(0,len(subSamples)-1):
+                            wv1Data += pack('h', subSamples[d][0])
+                            
                     subSamples = []
-
-            else:
-                break
 
     # write file
     print("writing file 1...")
@@ -106,7 +125,7 @@ def process_wave(filepath):
     wv0.close()
 
     print("writing file 2...")
-    wv1.writeframes(wv0Data)
+    wv1.writeframes(wv1Data)
     wv1.close()
     print("editing complete!")
 
@@ -123,4 +142,4 @@ def rms(samples):
 
     return sqrt(sumOfSquares/float(len(samples)))
 
-process_wave("1214_p1_hearth_m.wav")
+process_wave("testwave_03.wav")

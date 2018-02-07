@@ -1,22 +1,17 @@
 import pyaudio
 import wave
 from struct import pack, unpack
-from math import sqrt
+from math import sin, pi, sqrt
 import os
 
-def process_wave(filepath):
+def haptic_playback(filepath):
     """
-        If rms amplitude is above threshold, keep it in, if it's below threshold, cut it out.
-        filepath := a string
-        returns: nothing
+        processes a wavfile so the left channel is sinewave output and right channel is raw wave data
+        and then outputs to speakers
     """
     RATE=44100
     chunk = 512
-    threshold = 500
-
-    minimumTimeBetweenCuts = 0.5 # in seconds
-
-    cutTimeChunks = int(RATE*minimumTimeBetweenCuts) / 512 # the minimum time to wait to make an edit, in chunks.
+    threshold = 1000
 
     f = wave.open(filepath,"rb")  
     print("\n\nopening: "+filepath)
@@ -28,8 +23,8 @@ def process_wave(filepath):
     ## GENERATE STEREO FILE ##
     wv = wave.open('temp-edited.wav', 'w')
     wv.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
-    maxVol=2**14-1.0 # maximum amplitude
-    wvData="" # c string
+    maxVol=2**14-1.0 #maximum amplitude
+    wvData=""
     i = 0
     subSamples = []
 
@@ -51,21 +46,23 @@ def process_wave(filepath):
             
         else:
             data = 0
-        if (i % chunk == 0 and i != 0) or (i == f.getnframes()-1):    
+        if (i %chunk == 0 and i != 0) or (i == f.getnframes()-1):    
             if data: 
-                # get amplitude of chunk
+                #everything squared & rooted
                 amp = rms(subSamples[0:chunk-1]) # amp
                 ezToRead.append(amp) #array of amps
-                # -- write wave info
-                # -- cut if amp is below threshold
-                print("comparing: ",amp,threshold)
+                # -- write source wav file in left channel
+                # cut if amp is 0
                 if amp > threshold:
                     for d in range(0,len(subSamples)-1):
                         wvData += pack('h', subSamples[d][0])
+                #else:
+                    # for d in range(0,len(subSamples)-1):
+                    #     wvData += pack('h',0)
                 subSamples = []
+
             else:
-                print "below threshold"
-            
+                break
     wv.writeframes(wvData)
     wv.close()
     print("amp data: ",ezToRead)
@@ -84,4 +81,4 @@ def rms(samples):
 
     return sqrt(sumOfSquares/float(len(samples)))
 
-process_wave("testwave_03.wav")
+haptic_playback("3787_p0_cede_f.wav")
