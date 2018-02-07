@@ -10,9 +10,13 @@ def process_wave(filepath):
         filepath := a string
         returns: nothing
     """
-    RATE=44100
-    chunk = 512
-    threshold = 1000
+RATE=44100
+chunk = 512
+threshold = 1000
+
+minimumTimeBetweenCuts = 0.5 # in seconds
+
+cutTimeChunks = int(RATE*minimumTimeBetweenCuts) / 512 # the minimum time to wait to make an edit, in chunks.
 
     f = wave.open(filepath,"rb")  
     print("\n\nopening: "+filepath)
