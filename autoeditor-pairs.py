@@ -21,7 +21,7 @@ def process_wave(filepath):
     """
     RATE=44100
     chunk = 512
-    threshold = 500
+    threshold = 650
 
     minimumTimeBetweenCuts = 1 # in seconds
 
@@ -116,7 +116,7 @@ def process_wave(filepath):
                     elif part2:
                         for d in range(0,len(subSamples)-1):
                             wv1Data += pack('h', subSamples[d][0])
-                            
+
                     subSamples = []
 
     # write file
@@ -142,4 +142,4 @@ def rms(samples):
 
     return sqrt(sumOfSquares/float(len(samples)))
 
-process_wave("testwave_03.wav")
+process_wave("raw_minpair_stimuli/male/fricatives/fricativeVoicing_Untitled 46.wav")
