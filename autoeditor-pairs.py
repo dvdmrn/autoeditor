@@ -13,7 +13,7 @@ from struct import pack, unpack
 from math import sqrt
 import os
 
-def process_wave(filepath):
+def process_wave(filepath,saveas_0,saveas_1):
     """
         If rms amplitude is above threshold, keep it in, if it's below threshold, cut it out.
         filepath := a string
@@ -37,11 +37,11 @@ def process_wave(filepath):
     print("sample width: "+str(f.getsampwidth()))
 
     # setup wave files -- \
-    wv0 = wave.open('edit0.wav', 'w')
+    wv0 = wave.open(saveas_0+".wav", 'w')
     wv0.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
     wv0Data="" 
 
-    wv1 = wave.open('edit1.wav', 'w')
+    wv1 = wave.open(saveas_1+'.wav', 'w')
     wv1.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
     wv1Data="" 
     #                 -- /
