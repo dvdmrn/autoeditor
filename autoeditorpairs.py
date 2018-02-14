@@ -23,7 +23,7 @@ import os
 paddingSeconds = 0.1 # in seconds
 RATE=44100
 chunk = 512
-threshold = 1000
+threshold = 4000
 minimumTimeBetweenCuts = 0.5 # in seconds
 
 
@@ -122,7 +122,7 @@ def process_wave(filepath,saveas_0,saveas_1):
                         if chunksOfSilence > cutTimeChunks:
                             outPoint = min(i+paddingFrames,f.getnframes()-1)
                             interlude = True # we are prob in the interlude as we have exceeded our time threshold
-                            write_frames(inPoint,outPoint,allData,wv0)
+                            write_frames(inPoint,outPoint,allData,wv0,saveas_0)
 
                     subSamples = []
             else:
@@ -135,7 +135,7 @@ def process_wave(filepath,saveas_0,saveas_1):
                         inPoint = max(0,i-paddingFrames)
                         outPoint = f.getnframes()-1
 
-                        write_frames(inPoint,outPoint,allData,wv1)
+                        write_frames(inPoint,outPoint,allData,wv1,saveas_1)
                         break
 
                     subSamples = []
@@ -160,7 +160,7 @@ def rms(samples):
     return sqrt(sumOfSquares/float(len(samples)))
 
 
-def write_frames(i,o,data,wvFile):
+def write_frames(i,o,data,wvFile,name):
     """
         i := an int (index of in point)
         o := an int (index of out point)
@@ -176,6 +176,6 @@ def write_frames(i,o,data,wvFile):
     print("writing file object: "+str(wvFile._file)+"...")
     wvFile.writeframes(dataToWrite)
     wvFile.close()
-    print("    > wrote file")
+    print("    > wrote file: "+str(name))
 
-process_wave("fricativeVoicing_Untitled 1.wav","p0","p1")
+# process_wave("stops_Untitled 177.wav","p0","p1")

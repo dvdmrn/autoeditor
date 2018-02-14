@@ -1,0 +1,4 @@
+Rec. method of processing:
+1. Ensure ample time between stimuli utterances
+2. Normalize tokens beforehand
+3. Then run The Script
