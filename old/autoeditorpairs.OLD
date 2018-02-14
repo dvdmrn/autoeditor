@@ -6,6 +6,12 @@
         - 16bit pcm
         - 44100 Hz
         - mono
+
+    TODO: 
+        - set in point
+        - set out point
+        - then export from in and out point
+
 """
 import pyaudio
 import wave
@@ -13,21 +19,30 @@ from struct import pack, unpack
 from math import sqrt
 import os
 
+
+paddingSeconds = 0.2 # in seconds
+RATE=44100
+chunk = 512
+threshold = 400
+minimumTimeBetweenCuts = 0.3 # in seconds
+
+
+
 def process_wave(filepath,saveas_0,saveas_1):
     """
         If rms amplitude is above threshold, keep it in, if it's below threshold, cut it out.
         filepath := a string
         returns: nothing
     """
-    RATE=44100
-    chunk = 512
-    threshold = 650
 
-    minimumTimeBetweenCuts = 1 # in seconds
-
-    cutTimeChunks = int(RATE*minimumTimeBetweenCuts) / 512 # the minimum time to wait to make an edit, in chunks.
-
+    # --- cut spacing ---
+    cutTimeChunks = int(RATE*minimumTimeBetweenCuts) / chunk # the minimum time to wait to make an edit, in chunks.
     chunksOfSilence = 0
+    
+    # --- i/o points ---
+    inPoint = 0
+    outPoint = 1
+    paddingFrames = int(RATE*paddingSeconds) # in frames
 
     f = wave.open(filepath,"rb")  
     print("\n\nopening: "+filepath)
@@ -37,11 +52,11 @@ def process_wave(filepath,saveas_0,saveas_1):
     print("sample width: "+str(f.getsampwidth()))
 
     # setup wave files -- \
-    wv0 = wave.open(saveas_0+".wav", 'w')
+    wv0 = wave.open(saveas_0, 'w')
     wv0.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
     wv0Data="" 
 
-    wv1 = wave.open(saveas_1+'.wav', 'w')
+    wv1 = wave.open(saveas_1, 'w')
     wv1.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
     wv1Data="" 
     #                 -- /
@@ -90,6 +105,7 @@ def process_wave(filepath,saveas_0,saveas_1):
 
                     if amp > threshold:
                         part1 = True
+                        inPoint = i-
                         for d in range(0,len(subSamples)-1):
                             wv0Data += pack('h', subSamples[d][0])
                     else:
@@ -142,4 +158,11 @@ def rms(samples):
 
     return sqrt(sumOfSquares/float(len(samples)))
 
-process_wave("raw_minpair_stimuli/male/fricatives/fricativeVoicing_Untitled 46.wav")
+
+def write_frames(i,o):
+    """
+    i := an int (index of in point)
+    o := an int (index of out point)
+    """
+
+# process_wave("raw_minpair_stimuli/male/fricatives/fricativeVoicing_Untitled 46.wav")

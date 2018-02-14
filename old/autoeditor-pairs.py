@@ -6,12 +6,6 @@
         - 16bit pcm
         - 44100 Hz
         - mono
-
-    TODO: 
-        - set in point
-        - set out point
-        - then export from in and out point
-
 """
 import pyaudio
 import wave
@@ -19,13 +13,10 @@ from struct import pack, unpack
 from math import sqrt
 import os
 
-
-paddingSeconds = 0.1 # in seconds
 RATE=44100
 chunk = 512
-threshold = 1000
-minimumTimeBetweenCuts = 0.5 # in seconds
-
+threshold = 650
+minimumTimeBetweenCuts = 0.3 # in seconds
 
 
 def process_wave(filepath,saveas_0,saveas_1):
@@ -35,14 +26,11 @@ def process_wave(filepath,saveas_0,saveas_1):
         returns: nothing
     """
 
-    # --- cut spacing ---
-    cutTimeChunks = int(RATE*minimumTimeBetweenCuts) / chunk # the minimum time to wait to make an edit, in chunks.
+
+
+    cutTimeChunks = int(RATE*minimumTimeBetweenCuts) / 512 # the minimum time to wait to make an edit, in chunks.
+
     chunksOfSilence = 0
-    
-    # --- i/o points ---
-    inPoint = 0
-    outPoint = 1
-    paddingFrames = int(RATE*paddingSeconds) # in frames
 
     f = wave.open(filepath,"rb")  
     print("\n\nopening: "+filepath)
@@ -52,11 +40,13 @@ def process_wave(filepath,saveas_0,saveas_1):
     print("sample width: "+str(f.getsampwidth()))
 
     # setup wave files -- \
-    wv0 = wave.open(saveas_0, 'w')
+    wv0 = wave.open(saveas_0+".wav", 'w')
     wv0.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
+    wv0Data="" 
 
-    wv1 = wave.open(saveas_1, 'w')
+    wv1 = wave.open(saveas_1+'.wav', 'w')
     wv1.setparams((1, 2, RATE, 0, 'NONE', 'not compressed'))
+    wv1Data="" 
     #                 -- /
 
 
@@ -73,16 +63,8 @@ def process_wave(filepath,saveas_0,saveas_1):
 
     i = 0
     subSamples = []
+
     ezToRead = []
-    allData = []
-
-    for i in range(0, f.getnframes()-1):
-        frameSample = f.readframes(1)
-        if len(frameSample):
-            d = unpack('h',frameSample)
-            allData.append(d)
-
-    f = wave.open(filepath,"rb")  
 
     for i in range(0, f.getnframes()):
     
@@ -109,41 +91,45 @@ def process_wave(filepath,saveas_0,saveas_1):
                     # -- write wave info
                     # -- cut if amp is below threshold
 
-                    if amp > threshold: # reached start of pt1
-                        if not part1:
-                            print("amp",amp,i)
-                            part1 = True
-                            inPoint = max(0,i-paddingFrames)
-                        
-                        
+                    if amp > threshold:
+                        part1 = True
+                        for d in range(0,len(subSamples)-1):
+                            wv0Data += pack('h', subSamples[d][0])
                     else:
                         if part1:
+                            for d in range(0,len(subSamples)-1):
+                                wv0Data += pack('h', subSamples[d][0])
+                            # we are at least in part 1, and we have now reached silence.
                             chunksOfSilence += 1
                         if chunksOfSilence > cutTimeChunks:
-                            outPoint = min(i+paddingFrames,f.getnframes()-1)
                             interlude = True # we are prob in the interlude as we have exceeded our time threshold
-                            write_frames(inPoint,outPoint,allData,wv0)
 
                     subSamples = []
             else:
                 if data: 
                     # get amplitude of chunk
                     amp = rms(subSamples[0:chunk-1]) # amp
+                    ezToRead.append(amp) #array of amps
+                    # -- write wave info
                     # -- cut if amp is below threshold
                     if amp > threshold:
                         part2 = True
-                        inPoint = max(0,i-paddingFrames)
-                        outPoint = f.getnframes()-1
-
-                        write_frames(inPoint,outPoint,allData,wv1)
-                        break
+                        for d in range(0,len(subSamples)-1):
+                            wv1Data += pack('h', subSamples[d][0])
+                    elif part2:
+                        for d in range(0,len(subSamples)-1):
+                            wv1Data += pack('h', subSamples[d][0])
 
                     subSamples = []
 
     # write file
- 
+    print("writing file 1...")
+    wv0.writeframes(wv0Data)
+    wv0.close()
 
-   
+    print("writing file 2...")
+    wv1.writeframes(wv1Data)
+    wv1.close()
     print("editing complete!")
 
 def rms(samples):
@@ -159,23 +145,4 @@ def rms(samples):
 
     return sqrt(sumOfSquares/float(len(samples)))
 
-
-def write_frames(i,o,data,wvFile):
-    """
-        i := an int (index of in point)
-        o := an int (index of out point)
-        data := a list of ints
-        wvFile = a File Object
-    """
-    dataToWrite = ""
-    print("trimming with [i:"+str(i)+",o:"+str(o)+"]")
-    for d in range(i,o):
-        sample = data[d][0]
-        dataToWrite += pack('h', sample)
-    
-    print("writing file object: "+str(wvFile._file)+"...")
-    wvFile.writeframes(dataToWrite)
-    wvFile.close()
-    print("    > wrote file")
-
-process_wave("fricativeVoicing_Untitled 1.wav","p0","p1")
+process_wave("fricativeVoicing_Untitled 1.wav","f1","f2")
