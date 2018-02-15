@@ -20,11 +20,11 @@ from math import sqrt
 import os
 
 
-paddingSeconds = 0.1 # in seconds
+paddingSeconds = 0.4 # in seconds
 RATE=44100
 chunk = 512
-threshold = 4000
-minimumTimeBetweenCuts = 0.5 # in seconds
+threshold = 3000
+minimumTimeBetweenCuts = 0.2 # in seconds
 
 
 
@@ -64,6 +64,8 @@ def process_wave(filepath,saveas_0,saveas_1):
     part1 = False
     part2 = False
     interlude = False
+
+    wrotePart2 = False
 
     maxVol=2**15-1.0 # maximum amplitude
     # this is just handy to have onhand
@@ -111,7 +113,6 @@ def process_wave(filepath,saveas_0,saveas_1):
 
                     if amp > threshold: # reached start of pt1
                         if not part1:
-                            print("amp",amp,i)
                             part1 = True
                             inPoint = max(0,i-paddingFrames)
                         
@@ -122,28 +123,38 @@ def process_wave(filepath,saveas_0,saveas_1):
                         if chunksOfSilence > cutTimeChunks:
                             outPoint = min(i+paddingFrames,f.getnframes()-1)
                             interlude = True # we are prob in the interlude as we have exceeded our time threshold
+                            print "writing p0..."
                             write_frames(inPoint,outPoint,allData,wv0,saveas_0)
 
                     subSamples = []
             else:
+
+                # searching for part 2
                 if data: 
                     # get amplitude of chunk
                     amp = rms(subSamples[0:chunk-1]) # amp
-                    # -- cut if amp is below threshold
+                    # -- we are in part 2 --
                     if amp > threshold:
+                        chunksOfSilence = 0
                         part2 = True
                         inPoint = max(0,i-paddingFrames)
-                        outPoint = f.getnframes()-1
 
-                        write_frames(inPoint,outPoint,allData,wv1,saveas_1)
-                        break
-
+                    if part2:
+                        if amp < threshold:
+                            chunksOfSilence += 1
+                        if chunksOfSilence > cutTimeChunks:
+                            outPoint = min(i+paddingFrames,f.getnframes()-1)
+                            print "writing p1..."
+                            write_frames(inPoint,outPoint,allData,wv1,saveas_1)
+                            wrotePart2 = True
+                            break
                     subSamples = []
+    
+    if not wrotePart2: # looks like we are flush to the end
+        outPoint = f.getnframes()-200
+        write_frames(inPoint,outPoint,allData,wv1,saveas_1)
 
-    # write file
- 
 
-   
     print("editing complete!")
 
 def rms(samples):
@@ -178,4 +189,4 @@ def write_frames(i,o,data,wvFile,name):
     wvFile.close()
     print("    > wrote file: "+str(name))
 
-# process_wave("stops_Untitled 177.wav","p0","p1")
+# process_wave("test/1.wav","p0","p1")
