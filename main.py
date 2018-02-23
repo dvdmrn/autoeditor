@@ -23,7 +23,7 @@ def scanDir(minpairdata):
 				print "caught out of order recording!"
 				print "    >swapping: "+saveas[0]+" <--> "+saveas[1]
 				print "processing: \n    > "+saveas[1]+" \n    > "+saveas[0]
-				autoeditorpairs.process_wave(os.path.join(path, f), p0name, p1name)
+				autoeditorpairs.process_wave(os.path.join(path, f), p1name, p0name)
 			else:
 				print "processing: \n    > "+saveas[0]+" \n    > "+saveas[1]
 				autoeditorpairs.process_wave(os.path.join(path, f), p0name, p1name)
