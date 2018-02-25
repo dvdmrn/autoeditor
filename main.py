@@ -4,7 +4,7 @@ import csv
 import autoeditorpairs
 
 
-path = "raw_minpair_stimuli/male/stops/"
+path = "clean_minpair_stimuli/male/VowelHL/"
 gender = "m"
 
 def scanDir(minpairdata):
